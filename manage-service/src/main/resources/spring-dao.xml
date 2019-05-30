@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" 
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/aop 
+        http://www.springframework.org/schema/aop/spring-aop.xsd 
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd">
+	
+	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer" >
+		<property name="locations">
+        	<list>
+            	<value>classpath:jdbc.properties</value>
+        	</list>
+     	</property>
+	</bean>
+	<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+		<property name="username" value="${username}" />
+		<property name="password" value="${password}" />
+		<property name="url" value="${url}" />
+<!-- 		<property name="driverClassName" value="${driverClassName}" /> -->
+		<property name="initialSize" value="${druid.initialSize}" />
+		<property name="maxActive" value="${druid.maxActive}" />
+		<property name="minIdle" value="${druid.minIdle}" />
+		<property name="maxIdle" value="${druid.maxIdle}" />
+		<property name="maxWait" value="${druid.maxWait}" />
+	</bean>
+	
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">  
+		<property name="dataSource" ref="dataSource" />
+		 <!-- 自动扫描mapping.xml文件 -->  
+        <property name="mapperLocations" value="classpath*:mybatis/*Mapper.xml" />
+        <property name="typeAliasesPackage" value="com.mql.manage.entity" />
+	</bean>
+	<!--自动扫描对象关系映射 -->
+	 <bean class="tk.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+		<property name="basePackage" value="com.mql.manage.dao" />
+	</bean>
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<!--配置事务传播性 -->
+		<tx:attributes>
+			<tx:method name="add*" propagation="REQUIRED" />
+			<tx:method name="save*" propagation="REQUIRED" />
+			<tx:method name="insert*" propagation="REQUIRED" />
+			<tx:method name="update*" propagation="REQUIRED" />
+			<tx:method name="delete*" propagation="REQUIRED" />
+			<tx:method name="newAdd*" propagation="REQUIRES_NEW" />
+			<tx:method name="newSave*" propagation="REQUIRES_NEW" />
+			<tx:method name="newUpdate*" propagation="REQUIRES_NEW" />
+			
+			<tx:method name="get*" read-only="true" />
+			<tx:method name="find*" read-only="true" />
+			<tx:method name="query*" read-only="true" />
+			<tx:method name="load*" read-only="true" />
+			<tx:method name="*" propagation="SUPPORTS" />   
+		</tx:attributes>
+	</tx:advice>
+	<!--配置事务切点 -->
+	<aop:config>
+		<aop:pointcut expression="execution(* com.mql.manage..*Impl.*(..))" id="txPointcut" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="txPointcut"/>
+	</aop:config>
+	
+</beans>
